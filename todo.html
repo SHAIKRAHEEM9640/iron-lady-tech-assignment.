@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI To-Do Manager</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f3f4f6;
+        }
+    </style>
+</head>
+<body class="p-4 sm:p-8 bg-gray-100 flex flex-col items-center min-h-screen">
+    <div class="bg-white rounded-xl shadow-lg p-6 w-full max-w-lg">
+        <h1 class="text-3xl font-bold text-center text-purple-800 mb-6">AI To-Do Manager</h1>
+        
+        <!-- Input & AI Button -->
+        <div class="flex items-center space-x-3 mb-4">
+            <input type="text" id="taskInput" class="flex-1 p-3 rounded-xl border border-gray-300 focus:outline-none focus:ring-2 focus:ring-purple-500" placeholder="Enter a new task...">
+            <button id="addTaskBtn" class="bg-purple-600 text-white p-3 rounded-xl hover:bg-purple-700 transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-purple-500 font-medium">Add</button>
+        </div>
+        <button id="aiGenerateBtn" class="w-full bg-indigo-600 text-white p-3 rounded-xl mb-6 hover:bg-indigo-700 transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-indigo-500 font-medium flex items-center justify-center space-x-2">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                <path d="M5.5 16a2.5 2.5 0 100-5 2.5 2.5 0 000 5zM5.5 8a2.5 2.5 0 100-5 2.5 2.5 0 000 5zM14.5 16a2.5 2.5 0 100-5 2.5 2.5 0 000 5zM14.5 8a2.5 2.5 0 100-5 2.5 2.5 0 000 5zM8.707 9.293a1 1 0 00-1.414 1.414l3.536 3.535a1 1 0 001.414-1.414l-3.536-3.535z" />
+            </svg>
+            <span>Auto-Generate Task</span>
+        </button>
+
+        <!-- Task List -->
+        <ul id="taskList" class="space-y-3">
+            <!-- Tasks will be injected here -->
+        </ul>
+    </div>
+
+    <script>
+        const taskInput = document.getElementById('taskInput');
+        const addTaskBtn = document.getElementById('addTaskBtn');
+        const taskList = document.getElementById('taskList');
+        const aiGenerateBtn = document.getElementById('aiGenerateBtn');
+
+        let tasks = [];
+
+        function renderTasks() {
+            taskList.innerHTML = '';
+            tasks.forEach((task, index) => {
+                const li = document.createElement('li');
+                li.classList.add('flex', 'items-center', 'justify-between', 'p-4', 'bg-gray-50', 'rounded-xl', 'shadow-sm', 'transition-all', 'duration-200');
+                if (task.completed) {
+                    li.classList.add('line-through', 'opacity-60', 'italic');
+                }
+
+                li.innerHTML = `
+                    <span class="flex-1 text-lg font-medium text-gray-800">${task.text}</span>
+                    <div class="flex items-center space-x-2">
+                        <button onclick="toggleComplete(${index})" class="text-green-600 hover:text-green-800 transition-colors duration-200 focus:outline-none">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" viewBox="0 0 20 20" fill="currentColor">
+                                <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd" />
+                            </svg>
+                        </button>
+                        <button onclick="deleteTask(${index})" class="text-red-600 hover:text-red-800 transition-colors duration-200 focus:outline-none">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                            </svg>
+                        </button>
+                    </div>
+                `;
+                taskList.appendChild(li);
+            });
+        }
+
+        function addTask() {
+            const taskText = taskInput.value.trim();
+            if (taskText) {
+                tasks.push({ text: taskText, completed: false });
+                taskInput.value = '';
+                renderTasks();
+            }
+        }
+
+        function toggleComplete(index) {
+            tasks[index].completed = !tasks[index].completed;
+            renderTasks();
+        }
+
+        function deleteTask(index) {
+            tasks.splice(index, 1);
+            renderTasks();
+        }
+
+        addTaskBtn.addEventListener('click', addTask);
+        taskInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                addTask();
+            }
+        });
+
+        // Add loading indicator to the AI button
+        function setAIGenerateLoading(isLoading) {
+            const btn = document.getElementById('aiGenerateBtn');
+            if (isLoading) {
+                btn.innerHTML = `<svg class="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                            </svg> Generating...`;
+                btn.disabled = true;
+            } else {
+                btn.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                                <path d="M5.5 16a2.5 2.5 0 100-5 2.5 2.5 0 000 5zM5.5 8a2.5 2.5 0 100-5 2.5 2.5 0 000 5zM14.5 16a2.5 2.5 0 100-5 2.5 2.5 0 000 5zM14.5 8a2.5 2.5 0 100-5 2.5 2.5 0 000 5zM8.707 9.293a1 1 0 00-1.414 1.414l3.536 3.535a1 1 0 001.414-1.414l-3.536-3.535z" />
+                            </svg> Auto-Generate Task`;
+                btn.disabled = false;
+            }
+        }
+
+        // AI-powered auto-generation of a task (bonus feature)
+        aiGenerateBtn.addEventListener('click', async () => {
+            setAIGenerateLoading(true);
+            try {
+                const apiKey = "";
+                const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-05-20:generateContent?key=${apiKey}`;
+
+                const payload = {
+                    contents: [{
+                        parts: [{ text: "Suggest a single, concise, professional-related task for a to-do list. Do not include any extra text, formatting, or punctuation. Just the task itself." }]
+                    }]
+                };
+
+                const response = await fetch(apiUrl, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+
+                const result = await response.json();
+                
+                if (result.candidates && result.candidates[0] && result.candidates[0].content && result.candidates[0].content.parts[0]) {
+                    const aiTask = result.candidates[0].content.parts[0].text.trim();
+                    if (aiTask) {
+                        tasks.push({ text: aiTask, completed: false });
+                        renderTasks();
+                    }
+                }
+            } catch (error) {
+                console.error('AI generation failed:', error);
+            } finally {
+                setAIGenerateLoading(false);
+            }
+        });
+
+        // Initialize with some sample tasks
+        tasks = [
+            { text: "Review assignment guidelines", completed: false },
+            { text: "Draft a project plan for Task 1", completed: false },
+            { text: "Set up development environment", completed: true }
+        ];
+        renderTasks();
+
+    </script>
+</body>
+</html>
