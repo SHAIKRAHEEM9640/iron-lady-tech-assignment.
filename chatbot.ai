@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Iron Lady Chatbot</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f3f4f6;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+        }
+    </style>
+</head>
+<body class="bg-gray-100 p-4 sm:p-8">
+
+    <!-- Chatbot Container -->
+    <div class="flex flex-col h-[80vh] w-full max-w-sm sm:max-w-md bg-white rounded-xl shadow-lg overflow-hidden">
+        
+        <!-- Header -->
+        <div class="flex items-center justify-between p-4 bg-purple-800 text-white rounded-t-xl">
+            <h1 class="text-xl font-bold">Iron Lady AI Chatbot</h1>
+            <div class="flex items-center space-x-2">
+                <span class="relative flex h-3 w-3">
+                    <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
+                    <span class="relative inline-flex rounded-full h-3 w-3 bg-green-500"></span>
+                </span>
+                <span class="text-sm">Online</span>
+            </div>
+        </div>
+
+        <!-- Message Area -->
+        <div id="messages" class="flex-1 p-4 overflow-y-auto space-y-4">
+            <!-- Initial bot message -->
+            <div class="flex justify-start">
+                <div class="bg-purple-100 text-purple-900 rounded-2xl rounded-bl-none p-3 max-w-xs shadow-md">
+                    <p>Hello! I'm your AI assistant for Iron Lady. I can answer your questions about our leadership programs. Try asking about "program details," "duration," "certification," or "mentors."</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Input Area -->
+        <div class="p-4 bg-gray-50 flex items-center space-x-3 rounded-b-xl">
+            <input id="userInput" type="text" class="flex-1 p-3 rounded-xl border border-gray-300 focus:outline-none focus:ring-2 focus:ring-purple-500" placeholder="Ask a question...">
+            <button id="sendBtn" class="bg-purple-600 text-white p-3 rounded-xl hover:bg-purple-700 transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-purple-500">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3" />
+                </svg>
+            </button>
+        </div>
+    </div>
+
+    <script>
+        const userInput = document.getElementById('userInput');
+        const sendBtn = document.getElementById('sendBtn');
+        const messagesContainer = document.getElementById('messages');
+
+        // Add loading indicator
+        function addLoadingIndicator() {
+            const loadingDiv = document.createElement('div');
+            loadingDiv.id = 'loading';
+            loadingDiv.classList.add('flex', 'justify-start', 'animate-pulse');
+            loadingDiv.innerHTML = `
+                <div class="bg-gray-200 text-gray-800 rounded-2xl rounded-bl-none p-3 max-w-xs shadow-md">
+                    <div class="h-4 bg-gray-300 rounded w-full mb-1"></div>
+                    <div class="h-4 bg-gray-300 rounded w-2/3"></div>
+                </div>
+            `;
+            messagesContainer.appendChild(loadingDiv);
+            messagesContainer.scrollTop = messagesContainer.scrollHeight;
+        }
+
+        function removeLoadingIndicator() {
+            const loadingDiv = document.getElementById('loading');
+            if (loadingDiv) {
+                messagesContainer.removeChild(loadingDiv);
+            }
+        }
+
+        function addMessage(text, isUser) {
+            const messageDiv = document.createElement('div');
+            messageDiv.classList.add('flex', isUser ? 'justify-end' : 'justify-start');
+            
+            const messageBubble = document.createElement('div');
+            messageBubble.classList.add('rounded-2xl', 'p-3', 'max-w-xs', 'shadow-md');
+            
+            if (isUser) {
+                messageBubble.classList.add('bg-purple-600', 'text-white', 'rounded-br-none');
+            } else {
+                messageBubble.classList.add('bg-purple-100', 'text-purple-900', 'rounded-bl-none');
+            }
+            
+            messageBubble.innerHTML = `<p>${text}</p>`;
+            messageDiv.appendChild(messageBubble);
+            messagesContainer.appendChild(messageDiv);
+            messagesContainer.scrollTop = messagesContainer.scrollHeight;
+        }
+
+        const predefinedAnswers = {
+            "program details": "Our leadership programs are designed to help you develop essential skills for career growth, focusing on strategic thinking, communication, and innovation.",
+            "duration": "The Iron Lady leadership program typically runs for 12 weeks, with a new batch starting every quarter.",
+            "mode": "All our programs are conducted online, offering flexible learning from anywhere in the world.",
+            "certification": "Upon successful completion of the program, you will receive a verified certificate of completion from Iron Lady.",
+            "mentors": "Our mentors are seasoned industry leaders with years of experience. They provide one-on-one guidance and career counseling to all program participants."
+        };
+
+        async function handleUserInput() {
+            const userText = userInput.value.trim();
+            if (!userText) return;
+
+            addMessage(userText, true);
+            userInput.value = '';
+            
+            const lowerCaseText = userText.toLowerCase();
+            const relevantKey = Object.keys(predefinedAnswers).find(key => lowerCaseText.includes(key));
+
+            if (relevantKey) {
+                addMessage(predefinedAnswers[relevantKey], false);
+            } else {
+                addLoadingIndicator();
+                try {
+                    const apiKey = "";
+                    const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-05-20:generateContent?key=${apiKey}`;
+                    
+                    const systemPrompt = "You are an AI assistant for Iron Lady's leadership programs. Answer questions about program details, duration, mode, certification, and mentors based on the provided FAQ data. If a question is not directly related to these topics, respond politely by stating you can only answer questions about the Iron Lady programs.";
+                    
+                    const payload = {
+                        contents: [{ parts: [{ text: userText }] }],
+                        tools: [{ "google_search": {} }],
+                        systemInstruction: {
+                            parts: [{ text: systemPrompt }]
+                        },
+                    };
+
+                    const response = await fetch(apiUrl, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(payload)
+                    });
+                    
+                    const result = await response.json();
+                    
+                    if (result.candidates && result.candidates[0] && result.candidates[0].content && result.candidates[0].content.parts[0]) {
+                        addMessage(result.candidates[0].content.parts[0].text, false);
+                    } else {
+                        addMessage("I'm sorry, I couldn't generate a response for that. Please try asking again.", false);
+                    }
+                } catch (error) {
+                    console.error('API Error:', error);
+                    addMessage("I'm having trouble connecting right now. Please try again in a moment.", false);
+                } finally {
+                    removeLoadingIndicator();
+                }
+            }
+        }
+
+        sendBtn.addEventListener('click', handleUserInput);
+        userInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                handleUserInput();
+            }
+        });
+    </script>
+</body>
+</html>
